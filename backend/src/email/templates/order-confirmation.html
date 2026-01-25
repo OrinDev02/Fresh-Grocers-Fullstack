@@ -1,0 +1,33 @@
+<h2>Order Confirmed! 🎉</h2>
+<p>Hello {{customerName}},</p>
+<p>Your order <strong>{{orderNumber}}</strong> has been confirmed and is being prepared for delivery.</p>
+
+<h3>Order Details:</h3>
+<table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+    <tr>
+        <td style="padding: 8px; border-bottom: 1px solid #e5e7eb;"><strong>Order Number:</strong></td>
+        <td style="padding: 8px; border-bottom: 1px solid #e5e7eb;">{{orderNumber}}</td>
+    </tr>
+    <tr>
+        <td style="padding: 8px; border-bottom: 1px solid #e5e7eb;"><strong>Total Amount:</strong></td>
+        <td style="padding: 8px; border-bottom: 1px solid #e5e7eb;">₹{{totalAmount}}</td>
+    </tr>
+    <tr>
+        <td style="padding: 8px; border-bottom: 1px solid #e5e7eb;"><strong>Payment Method:</strong></td>
+        <td style="padding: 8px; border-bottom: 1px solid #e5e7eb;">Cash on Delivery</td>
+    </tr>
+</table>
+
+<h3>Delivery Address:</h3>
+<p>
+    {{deliveryAddress.street}}<br>
+    {{deliveryAddress.district}}, {{deliveryAddress.city}}<br>
+    {{deliveryAddress.province}}
+</p>
+
+<p><strong>Estimated Delivery Time:</strong> 30-45 minutes</p>
+
+<p>You will receive another notification when your order is out for delivery.</p>
+
+<p>Thank you for choosing Grocery Delivery!</p>
+<p>Best regards,<br>Grocery Delivery Team</p>
