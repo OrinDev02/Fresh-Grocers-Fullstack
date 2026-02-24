@@ -7,6 +7,7 @@ import {
   DeliveryProfileSchema,
 } from '../database/schemas/delivery-profile.schema';
 import { User, UserSchema } from '../database/schemas/user.schema';
+import { Order, OrderSchema } from '../database/schemas/order.schema';
 import { EmailModule } from '../email/email.module';
 
 @Module({
@@ -14,6 +15,7 @@ import { EmailModule } from '../email/email.module';
     MongooseModule.forFeature([
       { name: DeliveryProfile.name, schema: DeliveryProfileSchema },
       { name: User.name, schema: UserSchema },
+      { name: Order.name, schema: OrderSchema },
     ]),
     EmailModule,
   ],

@@ -5,9 +5,10 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { DeliveryProfile, DeliveryProfileDocument } from '../database/schemas/delivery-profile.schema';
 import { User, UserDocument } from '../database/schemas/user.schema';
+import { Order, OrderDocument } from '../database/schemas/order.schema';
 import { UpdateDeliveryProfileDto } from './dto/update-delivery-profile.dto';
 import { ApproveDeliveryDto } from './dto/approve-delivery.dto';
 import { NearbyDeliveryDto } from './dto/nearby-delivery.dto';
@@ -20,12 +21,14 @@ export class DeliveryService {
     @InjectModel(DeliveryProfile.name)
     private deliveryProfileModel: Model<DeliveryProfileDocument>,
     @InjectModel(User.name) private userModel: Model<UserDocument>,
+    @InjectModel(Order.name) private orderModel: Model<OrderDocument>,
     private emailService: EmailService,
   ) {}
 
-  async getProfile(userId: string) {
+  async getProfile(userId: string | Types.ObjectId) {
+    const userIdString = String(userId);
     const profile = await this.deliveryProfileModel
-      .findOne({ userId })
+      .findOne({ userId: userIdString })
       .populate('userId', 'fullName email phone')
       .exec();
 
@@ -36,8 +39,9 @@ export class DeliveryService {
     return profile;
   }
 
-  async updateProfile(userId: string, updateDto: UpdateDeliveryProfileDto) {
-    const profile = await this.deliveryProfileModel.findOne({ userId }).exec();
+  async updateProfile(userId: string | Types.ObjectId, updateDto: UpdateDeliveryProfileDto) {
+    const userIdString = String(userId);
+    const profile = await this.deliveryProfileModel.findOne({ userId: userIdString }).exec();
 
     if (!profile) {
       throw new NotFoundException('Delivery profile not found');
@@ -57,29 +61,30 @@ export class DeliveryService {
     return profile;
   }
 
-  async getApprovalStatus(userId: string) {
+  async getApprovalStatus(userId: string | Types.ObjectId) {
+    // Convert userId to string to ensure proper matching
+    const userIdString = String(userId);
+    
     const profile = await this.deliveryProfileModel
-      .findOne({ userId })
+      .findOne({ userId: userIdString })
+      .populate('userId', 'fullName email phone')
       .exec();
 
     if (!profile) {
       throw new NotFoundException('Delivery profile not found');
     }
 
-    return {
-      status: profile.status,
-      isApproved: profile.isApproved,
-      approvedAt: profile.approvedAt,
-    };
+    return profile;
   }
 
   async approveDeliveryPerson(
-    deliveryPersonId: string,
+    deliveryPersonId: string | Types.ObjectId,
     approveDto: ApproveDeliveryDto,
     approvedBy: string,
   ) {
+    const userIdString = String(deliveryPersonId);
     const profile = await this.deliveryProfileModel
-      .findOne({ userId: deliveryPersonId })
+      .findOne({ userId: userIdString })
       .exec();
 
     if (!profile) {
@@ -119,16 +124,22 @@ export class DeliveryService {
       .find({
         isApproved: true,
         status: 'APPROVED',
-        latitude: { $exists: true, $ne: null },
-        longitude: { $exists: true, $ne: null },
       })
       .populate('userId', 'fullName email phone')
       .exec();
 
-    const nearbyProfiles = allProfiles
-      .map((profile) => {
-        if (!profile.latitude || !profile.longitude) return null;
+    // First, try to find by GPS distance if coordinates are valid
+    const gpsMatches: any[] = [];
+    const districtMatches: any[] = [];
 
+    for (const profile of allProfiles) {
+      // Try GPS matching first if both have valid coordinates
+      if (
+        profile.latitude &&
+        profile.longitude &&
+        nearbyDto.latitude !== 0 &&
+        nearbyDto.longitude !== 0
+      ) {
         const distance = getDistance(
           { latitude: nearbyDto.latitude, longitude: nearbyDto.longitude },
           { latitude: profile.latitude, longitude: profile.longitude },
@@ -137,39 +148,82 @@ export class DeliveryService {
         const distanceInKm = distance / 1000; // Convert to km
 
         if (distanceInKm <= radius) {
-          return {
+          gpsMatches.push({
             ...profile.toObject(),
             distance: distanceInKm,
-          };
+            matchType: 'gps',
+          });
+          continue; // Skip district matching if GPS match found
         }
-        return null;
-      })
-      .filter((profile) => profile !== null)
-      .sort((a, b) => {
-        // Sort by distance first, then by rating
-        if (a.distance !== b.distance) {
-          return a.distance - b.distance;
+      }
+
+      // Fallback: Try district matching
+      if (nearbyDto.district && profile.district) {
+        if (
+          profile.district.toLowerCase() === nearbyDto.district.toLowerCase()
+        ) {
+          districtMatches.push({
+            ...profile.toObject(),
+            distance: 0, // Set distance to 0 for district-matched results
+            matchType: 'district',
+          });
         }
-        return b.averageRating - a.averageRating;
-      });
+      }
+    }
+
+    // Combine results: GPS matches first, then district matches
+    const nearbyProfiles = [...gpsMatches, ...districtMatches].sort((a, b) => {
+      // Sort by distance first (GPS matches have actual distance, district matches have 0)
+      if (a.distance !== b.distance) {
+        return a.distance - b.distance;
+      }
+      // Then by rating
+      return b.averageRating - a.averageRating;
+    });
 
     return nearbyProfiles;
   }
 
-  async getStats(userId: string) {
+  async getStats(userId: string | Types.ObjectId) {
+    const userIdString = String(userId);
     const profile = await this.deliveryProfileModel
-      .findOne({ userId })
+      .findOne({ userId: userIdString })
       .exec();
 
     if (!profile) {
       throw new NotFoundException('Delivery profile not found');
     }
 
+    // Get today's completed deliveries
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    const todayDeliveries = await this.orderModel
+      .find({
+        deliveryPersonId: profile._id,
+        status: 'DELIVERED',
+        deliveredAt: {
+          $gte: today,
+          $lt: tomorrow,
+        },
+      })
+      .exec();
+
+    const completedToday = todayDeliveries.length;
+    const todayEarnings = todayDeliveries.reduce(
+      (sum, order) => sum + (order.deliveryFee || 0),
+      0,
+    );
+
     return {
       totalDeliveries: profile.totalDeliveries,
       totalEarnings: profile.totalEarnings,
       averageRating: profile.averageRating,
       totalRatings: profile.totalRatings,
+      completedToday,
+      todayEarnings,
     };
   }
 }

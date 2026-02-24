@@ -102,11 +102,18 @@ export interface DeliveryAddress {
   longitude: number;
 }
 
+export interface UserInfo {
+  _id: string;
+  fullName: string;
+  email: string;
+  phone: string;
+}
+
 export interface Order {
   _id: string;
   orderNumber: string;
-  customerId: string;
-  deliveryPersonId?: string;
+  customerId: string | UserInfo;
+  deliveryPersonId?: string | UserInfo;
   items: OrderItem[];
   subtotal: number;
   deliveryFee: number;
@@ -124,7 +131,7 @@ export interface Order {
 // Delivery Types
 export interface DeliveryProfile {
   _id: string;
-  userId: string;
+  userId: string | { _id: string; fullName: string; email: string; phone: string };
   city: string;
   district: string;
   province: string;
@@ -139,6 +146,7 @@ export interface DeliveryProfile {
   totalRatings: number;
   totalDeliveries: number;
   totalEarnings: number;
+  distance?: number;
   createdAt: string;
   updatedAt: string;
 }

@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNumber, IsNotEmpty, Min } from 'class-validator';
+import { IsNumber, IsNotEmpty, Min, IsString, IsOptional } from 'class-validator';
 
 export class NearbyDeliveryDto {
   @ApiProperty({ example: 40.7128 })
@@ -16,4 +16,9 @@ export class NearbyDeliveryDto {
   @IsNumber()
   @Min(1)
   radius?: number;
+
+  @ApiProperty({ example: 'Colombo', required: false })
+  @IsString()
+  @IsOptional()
+  district?: string;
 }

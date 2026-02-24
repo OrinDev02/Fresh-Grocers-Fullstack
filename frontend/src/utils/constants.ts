@@ -15,6 +15,7 @@ export const ROUTES = {
   CUSTOMER_HOME: '/customer',
   CUSTOMER_PRODUCTS: '/customer/products',
   CUSTOMER_CART: '/customer/cart',
+  CUSTOMER_CHECKOUT: '/customer/checkout',
   CUSTOMER_ORDERS: '/customer/orders',
   CUSTOMER_PROFILE: '/customer/profile',
   
@@ -27,6 +28,7 @@ export const ROUTES = {
   // CSR
   CSR_DASHBOARD: '/csr',
   CSR_ORDERS: '/csr/orders',
+  CSR_POS: '/csr/pos',
   CSR_APPROVALS: '/csr/approvals',
   CSR_PRODUCTS: '/csr/products',
   CSR_CATEGORIES: '/csr/categories',

@@ -4,9 +4,9 @@ import type { Rating } from '../types';
 export const ratingsService = {
   // Create rating
   createRating: async (orderId: string, deliveryPersonId: string, rating: number, comment?: string): Promise<Rating> => {
+    // deliveryPersonId is sent but backend will use the one from order
     const response = await api.post<Rating>('/ratings', {
       orderId,
-      deliveryPersonId,
       rating,
       comment,
     });
@@ -22,9 +22,10 @@ export const ratingsService = {
   // Check if order is rated
   getOrderRating: async (orderId: string): Promise<Rating | null> => {
     try {
-      const response = await api.get<Rating>(`/ratings/order/${orderId}`);
-      return response.data;
-    } catch {
+      const response = await api.get<{ isRated: boolean; rating: Rating | null }>(`/ratings/order/${orderId}`);
+      return response.data.rating;
+    } catch (error) {
+      console.error('Error fetching order rating:', error);
       return null;
     }
   },

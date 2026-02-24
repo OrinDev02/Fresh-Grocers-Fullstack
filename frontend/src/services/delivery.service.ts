@@ -22,20 +22,20 @@ export const deliveryService = {
 
   // Approve delivery person (CSR only)
   approveDeliveryPerson: async (id: string): Promise<DeliveryProfile> => {
-    const response = await api.post<DeliveryProfile>(`/delivery/approve/${id}`);
+    const response = await api.post<DeliveryProfile>(`/delivery/approve/${id}`, { status: 'APPROVED' });
     return response.data;
   },
 
   // Reject delivery person (CSR only)
   rejectDeliveryPerson: async (id: string): Promise<DeliveryProfile> => {
-    const response = await api.post<DeliveryProfile>(`/delivery/reject/${id}`);
+    const response = await api.post<DeliveryProfile>(`/delivery/approve/${id}`, { status: 'REJECTED' });
     return response.data;
   },
 
   // Find nearby delivery persons (CSR only)
-  findNearby: async (latitude: number, longitude: number, radius?: number): Promise<DeliveryProfile[]> => {
+  findNearby: async (latitude: number, longitude: number, radius?: number, district?: string): Promise<DeliveryProfile[]> => {
     const response = await api.get<DeliveryProfile[]>('/delivery/nearby', {
-      params: { latitude, longitude, radius: radius || 5 },
+      params: { latitude, longitude, radius: radius || 5, district },
     });
     return response.data;
   },
@@ -44,5 +44,11 @@ export const deliveryService = {
   getStats: async (): Promise<any> => {
     const response = await api.get('/delivery/stats');
     return response.data;
+  },
+
+  // Get all approved delivery persons (CSR only)
+  getDeliveryPersons: async (): Promise<any[]> => {
+    const response = await api.get('/delivery/approved');
+    return response.data || [];
   },
 };

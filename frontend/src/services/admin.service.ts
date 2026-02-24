@@ -10,7 +10,7 @@ export const adminService = {
   // Get pending approvals
   getPendingApprovals: async (): Promise<any[]> => {
     const response = await api.get('/admin/pending-approvals');
-    return response.data;
+    return response.data.data || [];
   },
 
   // Get all orders with filters

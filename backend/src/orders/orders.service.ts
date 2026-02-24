@@ -11,6 +11,7 @@ import { Cart, CartDocument } from '../database/schemas/cart.schema';
 import { Product, ProductDocument } from '../database/schemas/product.schema';
 import { DeliveryProfile, DeliveryProfileDocument } from '../database/schemas/delivery-profile.schema';
 import { CreateOrderDto } from './dto/create-order.dto';
+import { CreateCSROrderDto } from './dto/create-csr-order.dto';
 import { AssignOrderDto } from './dto/assign-order.dto';
 import { QueryOrdersDto } from './dto/query-orders.dto';
 import { EmailService } from '../email/email.service';
@@ -109,6 +110,70 @@ export class OrdersService {
     return order;
   }
 
+  async createCSROrder(csrUserId: string, createCSROrderDto: CreateCSROrderDto) {
+    // Validate items and stock
+    const orderItems: Array<{
+      productId: any;
+      name: string;
+      quantity: number;
+      price: number;
+    }> = [];
+    let subtotal = 0;
+
+    for (const item of createCSROrderDto.items) {
+      const product = await this.productModel
+        .findById(item.productId)
+        .exec();
+
+      if (!product || !product.isActive) {
+        throw new BadRequestException(
+          `Product ${product?.name || 'Unknown'} is not available`,
+        );
+      }
+
+      if (product.stock < item.quantity) {
+        throw new BadRequestException(
+          `Insufficient stock for ${product.name}`,
+        );
+      }
+
+      // Update stock
+      product.stock -= item.quantity;
+      await product.save();
+
+      orderItems.push({
+        productId: product._id,
+        name: product.name,
+        quantity: item.quantity,
+        price: product.price,
+      });
+
+      subtotal += product.price * item.quantity;
+    }
+
+    const deliveryFee = createCSROrderDto.deliveryFee || 0;
+    const totalAmount = subtotal + deliveryFee;
+    const orderNumber = await this.generateOrderNumber();
+
+    // Create order without customer ID (CSR order)
+    const order = new this.orderModel({
+      orderNumber,
+      customerId: null, // CSR order, no specific customer
+      items: orderItems,
+      subtotal,
+      deliveryFee,
+      totalAmount,
+      status: 'PENDING',
+      paymentMethod: 'COD',
+      deliveryAddress: createCSROrderDto.deliveryAddress,
+      createdBy: csrUserId, // Track which CSR created this order
+    });
+
+    await order.save();
+
+    return order;
+  }
+
   async findAll(userId: string, userRole: string, queryDto: QueryOrdersDto) {
     const page = queryDto.page || 1;
     const limit = queryDto.limit || 20;
@@ -142,13 +207,11 @@ export class OrdersService {
     ]);
 
     return {
-      orders,
-      pagination: {
-        page,
-        limit,
-        total,
-        pages: Math.ceil(total / limit),
-      },
+      data: orders,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
     };
   }
 

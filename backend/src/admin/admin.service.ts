@@ -81,7 +81,13 @@ export class AdminService {
       .sort({ createdAt: -1 })
       .exec();
 
-    return pendingProfiles;
+    return {
+      data: pendingProfiles,
+      total: pendingProfiles.length,
+      page: 1,
+      limit: 100,
+      totalPages: 1,
+    };
   }
 
   async getStatistics() {

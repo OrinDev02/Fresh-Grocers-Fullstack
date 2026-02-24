@@ -17,6 +17,7 @@ import {
 } from '@nestjs/swagger';
 import { OrdersService } from './orders.service';
 import { CreateOrderDto } from './dto/create-order.dto';
+import { CreateCSROrderDto } from './dto/create-csr-order.dto';
 import { AssignOrderDto } from './dto/assign-order.dto';
 import { QueryOrdersDto } from './dto/query-orders.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
@@ -41,6 +42,18 @@ export class OrdersController {
     @Body() createOrderDto: CreateOrderDto,
   ) {
     return this.ordersService.create(user.id, createOrderDto);
+  }
+
+  @Post('csr/create')
+  @Roles('CSR')
+  @ApiOperation({ summary: 'Create order on behalf of customer (CSR only) - for POS system' })
+  @ApiResponse({ status: 201, description: 'Order created successfully and SMS sent' })
+  @ApiResponse({ status: 400, description: 'Invalid request data' })
+  async createCSROrder(
+    @CurrentUser() user: any,
+    @Body() createCSROrderDto: CreateCSROrderDto,
+  ) {
+    return this.ordersService.createCSROrder(user.id, createCSROrderDto);
   }
 
   @Get()

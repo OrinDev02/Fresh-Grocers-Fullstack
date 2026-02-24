@@ -1,8 +1,24 @@
-import { useNavigate } from 'react-router-dom';
-import { ROUTES } from '../../utils/constants';
+import { Navigate, useNavigate } from 'react-router-dom';
+import { ROUTES, USER_ROLES } from '../../utils/constants';
+import { useAppSelector } from '../../store/hooks';
 
 const SelectRolePage: React.FC = () => {
   const navigate = useNavigate();
+  const { isAuthenticated, user } = useAppSelector((state) => state.auth);
+
+  // 🔥 If user is already authenticated, redirect to their dashboard
+  // Do NOT clear auth here - it breaks the login flow
+  if (isAuthenticated && user?.role) {
+    if (user.role === USER_ROLES.CUSTOMER) {
+      return <Navigate to={ROUTES.CUSTOMER_HOME} replace />;
+    }
+    if (user.role === USER_ROLES.DELIVERY_PERSON) {
+      return <Navigate to={ROUTES.DELIVERY_DASHBOARD} replace />;
+    }
+    if (user.role === USER_ROLES.CSR) {
+      return <Navigate to={ROUTES.CSR_DASHBOARD} replace />;
+    }
+  }
 
   const roles = [
     {
@@ -11,7 +27,12 @@ const SelectRolePage: React.FC = () => {
       description: 'Shop groceries and get them delivered fast',
       icon: (
         <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"
+          />
         </svg>
       ),
       color: 'bg-green-100 text-green-600',
@@ -24,7 +45,12 @@ const SelectRolePage: React.FC = () => {
       description: 'Earn money by delivering orders',
       icon: (
         <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+          />
         </svg>
       ),
       color: 'bg-orange-100 text-orange-600',
@@ -37,7 +63,12 @@ const SelectRolePage: React.FC = () => {
       description: 'Manage orders and support customers',
       icon: (
         <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"
+          />
         </svg>
       ),
       color: 'bg-blue-100 text-blue-600',
@@ -66,7 +97,9 @@ const SelectRolePage: React.FC = () => {
               />
             </svg>
           </div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome to FreshCart</h1>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            Welcome to FreshGrocer
+          </h1>
           <p className="text-gray-600">Select how you'd like to continue</p>
         </div>
 
@@ -87,7 +120,9 @@ const SelectRolePage: React.FC = () => {
                   <p className="text-sm text-gray-600">{role.description}</p>
                 </div>
               </div>
-              <div className={`${role.buttonColor} text-white rounded-full p-2 group-hover:scale-110 transition-transform`}>
+              <div
+                className={`${role.buttonColor} text-white rounded-full p-2 group-hover:scale-110 transition-transform`}
+              >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                 </svg>

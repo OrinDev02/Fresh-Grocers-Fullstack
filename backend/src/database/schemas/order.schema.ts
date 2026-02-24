@@ -48,11 +48,14 @@ export class Order {
   @Prop({ required: true, unique: true })
   orderNumber: string;
 
-  @Prop({ type: Types.ObjectId, ref: 'User', required: true })
+  @Prop({ type: Types.ObjectId, ref: 'User' })
   customerId: Types.ObjectId;
 
   @Prop({ type: Types.ObjectId, ref: 'User' })
   deliveryPersonId: Types.ObjectId;
+
+  @Prop({ type: Types.ObjectId, ref: 'User' })
+  createdBy: Types.ObjectId;
 
   @Prop({ type: [OrderItemSchema], required: true })
   items: OrderItem[];

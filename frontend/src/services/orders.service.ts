@@ -3,8 +3,8 @@ import type { Order, DeliveryAddress } from '../types';
 
 export const ordersService = {
   // Create order (checkout)
-  createOrder: async (deliveryAddress: DeliveryAddress): Promise<Order> => {
-    const response = await api.post<Order>('/orders', { deliveryAddress });
+  createOrder: async (deliveryAddress: DeliveryAddress, deliveryFee: number = 0): Promise<Order> => {
+    const response = await api.post<Order>('/orders', { deliveryAddress, deliveryFee });
     return response.data;
   },
 
@@ -53,6 +53,24 @@ export const ordersService = {
   // Get order statistics (CSR only)
   getOrderStats: async (): Promise<any> => {
     const response = await api.get('/orders/stats');
+    return response.data;
+  },
+
+  // Create order on behalf of customer (CSR POS system)
+  createCSROrder: async (
+    customerPhone: string,
+    customerName: string,
+    items: Array<{ productId: string; quantity: number }>,
+    deliveryAddress: any,
+    deliveryFee: number = 0,
+  ): Promise<Order> => {
+    const response = await api.post<Order>('/orders/csr/create', {
+      customerPhone,
+      customerName,
+      items,
+      deliveryAddress,
+      deliveryFee,
+    });
     return response.data;
   },
 };
